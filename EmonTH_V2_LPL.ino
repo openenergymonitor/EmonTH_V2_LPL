@@ -230,6 +230,7 @@ void setup()
       radio.send(5, (const void*)(&emonth), sizeof(emonth));
       delay(100);
     }
+    radio.sleep();
     emonth.temp = 0;
     // end of factory test sequence
   }
@@ -410,6 +411,7 @@ void loop()
       dodelay(30);                                                     // wait for module to wakup
       // rfm_send((byte *)&emonth, sizeof(emonth), EEProm.networkGroup, nodeID, EEProm.RF_freq, EEProm.rfPower, busyThreshold, busyTimeout);
       radio.send(5, (const void*)(&emonth), sizeof(emonth));
+      radio.sleep();
       dodelay(100);
       power_spi_disable();
     }
