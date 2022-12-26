@@ -218,6 +218,9 @@ void setup()
     Serial.println("Init RFM...");
     radio.initialize(RF69_433MHZ,nodeID,EEProm.networkGroup);  
     radio.encrypt("89txbe4p8aik5kt3");                                                      // initialize RFM
+    Serial.print("rfPower: ");
+    Serial.println(EEProm.rfPower);
+    radio.setPowerLevel(EEProm.rfPower);
 #endif
 
     Serial.println("RFM Started");

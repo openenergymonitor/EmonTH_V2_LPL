@@ -237,6 +237,7 @@ void getSettings(void)
         case 'p': // set RF power level
           EEProm.rfPower = (Serial.parseInt() & 0x1F);
           Serial.print("p = ");Serial.print(EEProm.rfPower - 18);Serial.println(" dBm");
+          radio.setPowerLevel(EEProm.rfPower);
           break; 
           
         case 'r': // restore sketch defaults
