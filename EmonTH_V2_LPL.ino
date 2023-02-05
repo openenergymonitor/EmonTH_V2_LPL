@@ -97,6 +97,16 @@ const unsigned long PULSE_MAX_NUMBER = 100;                            // Data s
 #define FACTORYTESTGROUP 1                                             // Transmit the Factory Test on Grp 1 
                                                                        //   to avoid interference with recorded data at power-up.
 
+// Software debounce based on https://stackoverflow.com/a/33365097
+#define CHECK_EVERY_MS 25
+#define MIN_STABLE_VALS 10
+#define MIN_FALSE_VAL 3
+
+unsigned long previousMillis;
+volatile int stableVals;
+volatile int falseVals;
+volatile boolean lsEngaged;
+
 //---------------------------- emonTH Settings - Stored in EEPROM and shared with config.ino ------------------------------------------------
 struct 
 {
@@ -356,6 +366,31 @@ void loop()
   if (Sleepy::loseSomeTime(WDT_PERIOD)==1) {
     WDT_number++;
   }
+  
+  //Software debounce for reed switch gas meter
+  if (lsEngaged == LOW) {
+    if ((millis() - previousMillis) > CHECK_EVERY_MS) {
+      previousMillis += CHECK_EVERY_MS;
+      if ((digitalRead(pulse_count_pin) == LOW) && (lsEngaged == LOW)) {
+        stableVals++;
+        Serial.println(stableVals);
+        if (stableVals >= MIN_STABLE_VALS) {
+          lsEngaged = HIGH;
+          stableVals = 0;
+          pulseCount++;
+
+        }
+      }
+      else {
+        stableVals = 0;
+        falseVals++;
+        if (falseVals>=MIN_FALSE_VAL) {
+          lsEngaged = HIGH;
+          falseVals = 0;
+        }
+      }
+    }
+  }
 
   if (WDT_number>=WDT_MAX_NUMBER || pulseCount>=PULSE_MAX_NUMBER)
   {
@@ -481,7 +516,10 @@ void startPulseCount(void)
   pulseCount = 0;
   WDT_number=720;
   newPulse = false;
-  attachInterrupt(digitalPinToInterrupt(pulse_count_pin), onPulse, RISING);
+  lsEngaged = HIGH;
+  stableVals = 0;
+  falseVals = 0;
+  attachInterrupt(digitalPinToInterrupt(pulse_count_pin), onPulse, FALLING);
 }
 
 void stopPulseCount(void)
@@ -493,7 +531,7 @@ void stopPulseCount(void)
 void onPulse()
 {
   newPulse = true;                           // flag for new pulse set to true
-  pulseCount++;                              // number of pulses since the last RF sent
+  lsEngaged = LOW;                             // number of pulses since the last RF sent
 }
 
 void printTemperatureSensorAddresses(void)
